@@ -1,12 +1,13 @@
 use crate::db::Database;
-use crate::models::{CommonEarthquakeInfo, EarthquakeData, WebSocketMessage};
+use crate::event_cache::EventCache;
+use crate::models::{CachedEvent, CommonEarthquakeInfo, EarthquakeData, WebSocketMessage};
 use crate::services::BarkNotifier;
 use crate::utils::{distance, geohash, intensity};
 use anyhow::Result;
 use futures::stream::{self, StreamExt};
 use futures_util::StreamExt as FuturesStreamExt;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::Semaphore;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 
@@ -17,6 +18,7 @@ const RECONNECT_DELAY: Duration = Duration::from_secs(5);
 pub struct EarthquakeMonitor {
     db: Database,
     bark_notifier: BarkNotifier,
+    event_cache: EventCache,
     max_concurrent: usize,
     semaphore: Arc<Semaphore>,
 }
@@ -28,6 +30,7 @@ impl EarthquakeMonitor {
         http_pool_size: usize,
         max_concurrent: usize,
         _batch_size: usize,
+        event_cache: EventCache,
     ) -> Self {
         let subscription_store = db.subscriptions();
         let bark_notifier = BarkNotifier::new(bark_api_url, http_pool_size, subscription_store);
@@ -42,6 +45,7 @@ impl EarthquakeMonitor {
         Self {
             db,
             bark_notifier,
+            event_cache,
             max_concurrent,
             semaphore,
         }
@@ -156,6 +160,24 @@ impl EarthquakeMonitor {
 
         // 查找并推送给相关订阅者
         self.notify_subscribers(&common_info).await?;
+
+        // 缓存历史事件
+        let cached = CachedEvent {
+            id: format!("{}_{}", common_info.source_type, common_info.origin_time),
+            source_type: common_info.source_type.clone(),
+            latitude: common_info.latitude,
+            longitude: common_info.longitude,
+            magnitude: common_info.magnitude,
+            depth: common_info.depth,
+            max_intensity: common_info.max_intensity.clone(),
+            region: common_info.region.clone(),
+            origin_time: common_info.origin_time.clone(),
+            created_at: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as i64,
+        };
+        self.event_cache.push(cached).await;
 
         Ok(())
     }

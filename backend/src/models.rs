@@ -385,6 +385,21 @@ pub struct CommonEarthquakeInfo {
     pub source_type: String, // 数据源类型
 }
 
+/// 缓存的历史地震事件
+#[derive(Debug, Clone, Serialize)]
+pub struct CachedEvent {
+    pub id: String,
+    pub source_type: String,
+    pub latitude: f64,
+    pub longitude: f64,
+    pub magnitude: f64,
+    pub depth: f64,
+    pub max_intensity: String,
+    pub region: String,
+    pub origin_time: String,
+    pub created_at: i64,
+}
+
 /// WebSocket 消息包装（用于区分不同类型的消息）
 #[derive(Debug, Deserialize)]
 pub struct WebSocketMessage {
