@@ -670,6 +670,109 @@
                 }
             }
 
+            /* 浮动帮助按钮 */
+            .help-btn {
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                background: var(--primary);
+                color: #fff;
+                font-size: 22px;
+                font-weight: 700;
+                border: none;
+                cursor: pointer;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+                z-index: 1000;
+                transition: var(--transition);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .help-btn:hover {
+                transform: scale(1.1);
+                box-shadow: 0 6px 24px rgba(0, 113, 227, 0.4);
+            }
+
+            .help-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(4px);
+                z-index: 999;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            }
+
+            .help-overlay.open {
+                display: flex;
+            }
+
+            .help-modal {
+                background: var(--card-bg);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border-radius: var(--border-radius);
+                padding: 32px;
+                max-width: 480px;
+                width: 100%;
+                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                max-height: 90vh;
+                overflow-y: auto;
+                animation: fadeInDown 0.3s ease-out;
+            }
+
+            .help-modal h2 {
+                margin-bottom: 20px;
+            }
+
+            .help-modal ol {
+                margin: 0;
+                padding-left: 20px;
+                font-size: 14px;
+                line-height: 1.8;
+                color: var(--text-main);
+            }
+
+            .help-modal ol li {
+                margin-bottom: 10px;
+            }
+
+            .help-modal ol li a {
+                color: var(--primary);
+                text-decoration: none;
+                font-weight: 500;
+                word-break: break-all;
+            }
+
+            .help-modal ol li a:hover {
+                text-decoration: underline;
+            }
+
+            .help-close-btn {
+                margin-top: 24px;
+                width: 100%;
+                height: 48px;
+                border-radius: 12px;
+                font-size: 15px;
+                font-weight: 600;
+                border: none;
+                background: var(--primary);
+                color: #fff;
+                cursor: pointer;
+                transition: var(--transition);
+            }
+
+            .help-close-btn:hover {
+                opacity: 0.9;
+            }
+
             @media (max-width: 600px) {
                 main {
                     padding: 40px 16px;
@@ -682,6 +785,16 @@
                 }
                 .btn-row {
                     grid-template-columns: 1fr;
+                }
+                .help-btn {
+                    bottom: 16px;
+                    right: 16px;
+                    width: 42px;
+                    height: 42px;
+                    font-size: 18px;
+                }
+                .help-modal {
+                    padding: 24px;
                 }
             }
         </style>
@@ -718,31 +831,15 @@
 
                 <form id="subscribe-form">
                     <div class="field">
-                        <label>Bark 推送密钥 (Key)</label>
+                        <label>Bark 推送链接</label>
                         <input
                             type="text"
-                            id="bark-id"
-                            placeholder="例如: JP8S9..."
+                            id="bark-url"
+                            placeholder="例如: https://api.day.app/tWpKSJURdbSxg4sbSo9uJ6/"
                             required
                             autocomplete="off"
-                            maxlength="64"
                         />
-                        <small
-                            >请打开 Bark App，获取 api.day.app 的密钥。</small
-                        >
-                    </div>
-
-                    <div class="field">
-                        <label>Bark 服务器地址</label>
-                        <input
-                            type="url"
-                            id="bark-api-url"
-                            value="https://api.day.app"
-                            autocomplete="off"
-                        />
-                        <small
-                            >默认 Bark 官方服务器，自建服务器请填写完整地址。</small
-                        >
+                        <small>打开 Bark App → 设置 → 复制完整推送链接，粘贴到上方。</small>
                     </div>
 
                     <div class="field">
@@ -976,6 +1073,21 @@
                 </p>
             </footer>
         </main>
+
+        <button class="help-btn" id="help-btn">?</button>
+        <div class="help-overlay" id="help-overlay">
+            <div class="help-modal">
+                <h2>使用说明</h2>
+                <ol>
+                    <li>打开 App Store，下载应用 <a href="https://apps.apple.com/cn/app/bark-%E7%BB%99%E4%BD%A0%E7%9A%84%E6%89%8B%E6%9C%BA%E5%8F%91%E6%8E%A8%E9%80%81/id1403753865" target="_blank">Bark</a></li>
+                    <li>打开 Bark App → 设置 → 复制完整的推送链接</li>
+                    <li>将链接粘贴到网页输入框，并在地图上更新监测位置、调整通知阈值</li>
+                    <li>点击"发送测试通知"验证推送是否正常</li>
+                    <li>建议自建 Bark 服务端以保障隐私和推送稳定性：<a href="https://github.com/Finb/bark-server" target="_blank">github.com/Finb/bark-server</a></li>
+                </ol>
+                <button class="help-close-btn" id="help-close-btn">知道了</button>
+            </div>
+        </div>
 
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script>
@@ -1233,6 +1345,31 @@
                 }
             }
 
+            // 从完整 Bark URL 解析服务器地址和密钥
+            function parseBarkUrl(url) {
+                url = url.trim();
+                url = url.replace("这里改成你自己的推送内容", "");
+                url = url.replace(/\/+$/, "");
+                var idx = url.lastIndexOf("/");
+                if (idx <= 10) return { base: "https://api.day.app", key: "" };
+                return {
+                    base: url.substring(0, idx),
+                    key: url.substring(idx + 1),
+                };
+            }
+
+            function getBarkUrl() {
+                return document.getElementById("bark-url").value.trim();
+            }
+
+            function getBarkKey() {
+                return parseBarkUrl(getBarkUrl()).key;
+            }
+
+            function getBarkBase() {
+                return parseBarkUrl(getBarkUrl()).base;
+            }
+
             function calcTestPreview() {
                 const mag = parseFloat(teMag.textContent) || 0;
                 const depth = parseFloat(teDepth.textContent) || 0;
@@ -1266,10 +1403,10 @@
             }
 
             testSendBtn.addEventListener("click", async () => {
-                const barkId = document.getElementById("bark-id").value.trim();
+                const barkId = getBarkKey();
                 if (!barkId) {
                     testResult.className = "test-result error";
-                    testResult.textContent = "请先输入 Bark Key";
+                    testResult.textContent = "请先粘贴 Bark 推送链接";
                     return;
                 }
                 testSendBtn.disabled = true;
@@ -1317,11 +1454,14 @@
             form.addEventListener("submit", async (e) => {
                 e.preventDefault();
                 const btn = document.getElementById("submit-btn");
-                const bark_api_url = document
-                    .getElementById("bark-api-url")
-                    .value.trim();
+                const barkUrl = getBarkUrl();
+                const parsed = parseBarkUrl(barkUrl);
+                if (!parsed.key) {
+                    showStatus("请粘贴有效的 Bark 推送链接", "error");
+                    return;
+                }
                 const data = {
-                    bark_id: document.getElementById("bark-id").value.trim(),
+                    bark_id: parsed.key,
                     latitude: parseFloat(latInput.value),
                     longitude: parseFloat(lonInput.value),
                     min_intensity: parseInt(
@@ -1329,7 +1469,7 @@
                     ),
                     passive_max: parseInt(passiveMax.value) || 1,
                     active_max: parseInt(activeMax.value) || 2,
-                    bark_api_url: bark_api_url || "https://api.day.app",
+                    bark_api_url: parsed.base,
                 };
 
                 btn.disabled = true;
@@ -1349,11 +1489,7 @@
                     if (res.ok && result.success) {
                         showStatus("订阅成功！地震预警已生效。", "success");
                         updateStatusSection(result.data);
-                        localStorage.setItem("bark_id", data.bark_id);
-                        localStorage.setItem(
-                            "bark_api_url",
-                            data.bark_api_url,
-                        );
+                        localStorage.setItem("bark_url", barkUrl);
                         localStorage.setItem(
                             "passive_max",
                             String(data.passive_max),
@@ -1385,10 +1521,10 @@
 
             // 取消订阅
             unsubBtn.addEventListener("click", async () => {
-                const barkId = document.getElementById("bark-id").value.trim();
+                const barkId = getBarkKey();
                 if (!barkId) {
-                    showStatus("请输入 Bark ID 以进行退订操作", "error");
-                    document.getElementById("bark-id").focus();
+                    showStatus("请粘贴 Bark 推送链接以进行退订", "error");
+                    document.getElementById("bark-url").focus();
                     return;
                 }
 
@@ -1411,7 +1547,7 @@
                         );
                         form.reset();
                         if (marker) map.removeLayer(marker);
-                        localStorage.removeItem("bark_id");
+                        localStorage.removeItem("bark_url");
                         statusSection.style.display = "none";
                         testSection.style.display = "none";
                     } else {
@@ -1440,14 +1576,11 @@
             // 初始化加载
             window.addEventListener("DOMContentLoaded", () => {
                 fetchStats();
-                const savedId = localStorage.getItem("bark_id");
-                if (savedId) {
-                    document.getElementById("bark-id").value = savedId;
-                    fetchSubscription(savedId);
+                const savedUrl = localStorage.getItem("bark_url");
+                if (savedUrl) {
+                    document.getElementById("bark-url").value = savedUrl;
+                    fetchSubscription(getBarkKey());
                 }
-                const savedApiUrl = localStorage.getItem("bark_api_url");
-                if (savedApiUrl)
-                    document.getElementById("bark-api-url").value = savedApiUrl;
 
                 const savedPm = localStorage.getItem("passive_max");
                 if (savedPm) {
@@ -1461,6 +1594,29 @@
 
                 const savedPos = JSON.parse(localStorage.getItem("last_pos"));
                 if (savedPos) setPosition(savedPos.lat, savedPos.lon);
+
+                // 旧版 localStorage 迁移到新版 bark_url
+                var oldId = localStorage.getItem("bark_id");
+                var oldUrl = localStorage.getItem("bark_url");
+                if (oldId && !oldUrl) {
+                    var base = localStorage.getItem("bark_api_url") || "https://api.day.app";
+                    localStorage.setItem("bark_url", base + "/" + oldId + "/");
+                    localStorage.removeItem("bark_id");
+                    localStorage.removeItem("bark_api_url");
+                }
+            });
+
+            // 帮助按钮
+            document.getElementById("help-btn").addEventListener("click", () => {
+                document.getElementById("help-overlay").classList.add("open");
+            });
+            document.getElementById("help-close-btn").addEventListener("click", () => {
+                document.getElementById("help-overlay").classList.remove("open");
+            });
+            document.getElementById("help-overlay").addEventListener("click", (e) => {
+                if (e.target === e.currentTarget) {
+                    document.getElementById("help-overlay").classList.remove("open");
+                }
             });
         </script>
     </body>
