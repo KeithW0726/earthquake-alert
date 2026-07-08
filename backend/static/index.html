@@ -416,6 +416,97 @@
                 }
             }
 
+            /* 通知测试卡片 */
+            #test-content {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .test-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 14px;
+                padding: 6px 0;
+                border-bottom: 1px solid var(--input-border);
+            }
+
+            .test-label {
+                color: var(--text-secondary);
+                font-size: 12px;
+                font-weight: 500;
+            }
+
+            .test-value {
+                color: var(--text-main);
+                font-weight: 500;
+                text-align: right;
+                word-break: break-all;
+            }
+
+            .test-editable-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 10px;
+                margin-top: 4px;
+            }
+
+            .test-field label {
+                font-size: 11px;
+                margin-bottom: 4px;
+            }
+
+            .test-field input {
+                height: 38px;
+                font-size: 14px;
+                padding: 0 10px;
+            }
+
+            .test-calc {
+                display: flex;
+                justify-content: space-between;
+                font-size: 13px;
+                color: var(--text-secondary);
+                background: var(--input-bg);
+                padding: 10px 14px;
+                border-radius: 10px;
+                border: 1px solid var(--input-border);
+            }
+
+            .test-calc strong {
+                color: var(--text-main);
+            }
+
+            .test-result {
+                font-size: 13px;
+                font-weight: 500;
+                text-align: center;
+                padding: 8px;
+                border-radius: 8px;
+                min-height: 0;
+            }
+
+            .test-result.success {
+                color: var(--status-success-text);
+                background: var(--status-success-bg);
+            }
+
+            .test-result.error {
+                color: var(--status-error-text);
+                background: var(--status-error-bg);
+            }
+
+            @media (max-width: 600px) {
+                .test-editable-row {
+                    grid-template-columns: 1fr;
+                }
+                .test-calc {
+                    flex-direction: column;
+                    gap: 6px;
+                }
+            }
+
             /* 订阅状态卡片 */
             #status-section dl {
                 display: grid;
@@ -817,6 +908,54 @@
                 </form>
             </div>
 
+            <div class="glass-card" id="test-section" style="display:none">
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    通知测试
+                </h2>
+                <div id="test-content">
+                    <div class="test-row">
+                        <span class="test-label">地震事件</span>
+                        <span id="te-event" class="test-value">加载中...</span>
+                    </div>
+                    <div class="test-row">
+                        <span class="test-label">发震时间</span>
+                        <span id="te-time" class="test-value"></span>
+                    </div>
+                    <div class="test-row">
+                        <span class="test-label">震中位置</span>
+                        <span id="te-location" class="test-value"></span>
+                    </div>
+                    <div class="test-editable-row">
+                        <div class="test-field">
+                            <label>震级 (Magnitude)</label>
+                            <input type="number" id="te-mag" step="0.1" min="0" max="10">
+                        </div>
+                        <div class="test-field">
+                            <label>深度 (km)</label>
+                            <input type="number" id="te-depth" step="1" min="0" max="1000">
+                        </div>
+                        <div class="test-field">
+                            <label>最大烈度</label>
+                            <input type="number" id="te-max-int" step="0.1" min="0" max="10">
+                        </div>
+                    </div>
+                    <div class="test-calc">
+                        <span>预计距离: <strong id="te-dist">-</strong> km</span>
+                        <span>预估烈度: <strong id="te-int">-</strong></span>
+                        <span>S波到达: <strong id="te-arrival">-</strong></span>
+                    </div>
+                    <button id="test-send-btn" class="btn-primary" style="margin-top:16px;width:100%">
+                        发送测试通知
+                    </button>
+                    <div id="test-result" class="test-result"></div>
+                </div>
+            </div>
+
             <div class="glass-card" id="status-section" style="display:none">
                 <h2>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -995,6 +1134,20 @@
             const sRanges = document.getElementById("s-ranges");
             const sUpdated = document.getElementById("s-updated");
 
+            // 通知测试元素
+            const testSection = document.getElementById("test-section");
+            const teEvent = document.getElementById("te-event");
+            const teTime = document.getElementById("te-time");
+            const teLocation = document.getElementById("te-location");
+            const teMag = document.getElementById("te-mag");
+            const teDepth = document.getElementById("te-depth");
+            const teMaxInt = document.getElementById("te-max-int");
+            const teDist = document.getElementById("te-dist");
+            const teInt = document.getElementById("te-int");
+            const teArrival = document.getElementById("te-arrival");
+            const testSendBtn = document.getElementById("test-send-btn");
+            const testResult = document.getElementById("test-result");
+
             const INTENSITY_LABELS = {
                 0: "烈度 0（所有预警）", 1: "烈度 1", 2: "烈度 2",
                 3: "烈度 3", 4: "烈度 4", 5: "烈度 5",
@@ -1008,6 +1161,7 @@
                 sRanges.textContent = `被动: 0–${sub.passive_max} | 主动: ${sub.passive_max + 1}–${sub.active_max} | 强提醒: ${sub.active_max + 1}+`;
                 sUpdated.textContent = new Date(sub.created_at).toLocaleString("zh-CN");
                 statusSection.style.display = "";
+                loadTestEarthquake();
             }
 
             async function fetchSubscription(barkId) {
@@ -1021,6 +1175,100 @@
                     // 静默失败，不显示状态
                 }
             }
+
+            // 通知测试
+            let testEarthquakeData = null;
+
+            async function loadTestEarthquake() {
+                testSection.style.display = "";
+                teEvent.textContent = "加载中...";
+                try {
+                    const res = await fetch(`${API}/api/test-earthquake`);
+                    const result = await res.json();
+                    if (res.ok && result.success) {
+                        testEarthquakeData = result.data;
+                        const d = result.data;
+                        teEvent.textContent = d.event_id;
+                        teTime.textContent = d.origin_time;
+                        teLocation.textContent = `${d.hypocenter} (${d.latitude.toFixed(3)}, ${d.longitude.toFixed(3)})`;
+                        teMag.value = d.magnitude;
+                        teDepth.value = d.depth;
+                        teMaxInt.value = d.max_intensity;
+                        calcTestPreview();
+                    } else {
+                        teEvent.textContent = "暂无地震数据";
+                    }
+                } catch {
+                    teEvent.textContent = "获取失败";
+                }
+            }
+
+            function calcTestPreview() {
+                const mag = parseFloat(teMag.value) || 0;
+                const depth = parseFloat(teDepth.value) || 0;
+                // 粗略估算距离和烈度显示（仅前端预览，实际发通知时服务端精确计算）
+                const lat = parseFloat(latInput.value);
+                const lon = parseFloat(lonInput.value);
+                if (lat && lon && mag > 0) {
+                    const dist = Math.round(111 * Math.sqrt((lat - 28.5) ** 2 + (lon - 104.5) ** 2));
+                    teDist.textContent = dist;
+                    const estInt = Math.min(Math.max(Math.round(mag * 1.5 - 2.5 - 2.0 * Math.log10(dist + 10) + 1.0), 0), 7);
+                    teInt.textContent = estInt;
+                    teArrival.textContent = Math.round(dist / 3.5) + "s";
+                }
+            }
+
+            teMag.addEventListener("input", calcTestPreview);
+            teDepth.addEventListener("input", calcTestPreview);
+            teMaxInt.addEventListener("input", calcTestPreview);
+
+            testSendBtn.addEventListener("click", async () => {
+                const barkId = document.getElementById("bark-id").value.trim();
+                if (!barkId) {
+                    testResult.className = "test-result error";
+                    testResult.textContent = "请先输入 Bark Key";
+                    return;
+                }
+                testSendBtn.disabled = true;
+                testSendBtn.textContent = "发送中...";
+                testResult.className = "test-result";
+                testResult.textContent = "";
+                if (!testEarthquakeData) {
+                    testResult.className = "test-result error";
+                    testResult.textContent = "地震数据未加载";
+                    return;
+                }
+                try {
+                    const res = await fetch(`${API}/api/test-notify`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            bark_id: barkId,
+                            magnitude: parseFloat(teMag.value) || 0,
+                            depth: parseFloat(teDepth.value) || 0,
+                            max_intensity: parseFloat(teMaxInt.value) || 0,
+                            epicenter_lat: testEarthquakeData.latitude,
+                            epicenter_lon: testEarthquakeData.longitude,
+                            hypocenter: testEarthquakeData.hypocenter,
+                            origin_time: testEarthquakeData.origin_time,
+                        }),
+                    });
+                    const result = await res.json();
+                    if (res.ok && result.success) {
+                        testResult.className = "test-result success";
+                        testResult.textContent = "测试通知已发送 ✓";
+                    } else {
+                        testResult.className = "test-result error";
+                        testResult.textContent = result.message || "发送失败";
+                    }
+                } catch {
+                    testResult.className = "test-result error";
+                    testResult.textContent = "网络错误";
+                } finally {
+                    testSendBtn.disabled = false;
+                    testSendBtn.textContent = "发送测试通知";
+                }
+            });
 
             // 提交订阅
             form.addEventListener("submit", async (e) => {
@@ -1122,6 +1370,7 @@
                         if (marker) map.removeLayer(marker);
                         localStorage.removeItem("bark_id");
                         statusSection.style.display = "none";
+                        testSection.style.display = "none";
                     } else {
                         showStatus(result.message || "取消订阅失败", "error");
                     }

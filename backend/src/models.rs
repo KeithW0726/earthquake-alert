@@ -421,3 +421,29 @@ impl Default for GeoHashIndex {
         Self::new()
     }
 }
+
+/// 缓存的最新地震数据（来自 wolfx API，每 5 分钟刷新）
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct CachedEarthquake {
+    pub event_id: String,
+    pub origin_time: String,
+    pub hypocenter: String,
+    pub latitude: f64,
+    pub longitude: f64,
+    pub magnitude: f64,
+    pub depth: f64,
+    pub max_intensity: f64,
+}
+
+/// 测试通知请求
+#[derive(Debug, Deserialize)]
+pub struct TestNotifyRequest {
+    pub bark_id: String,
+    pub magnitude: f64,
+    pub depth: f64,
+    pub max_intensity: f64,
+    pub epicenter_lat: f64,
+    pub epicenter_lon: f64,
+    pub hypocenter: String,
+    pub origin_time: String,
+}

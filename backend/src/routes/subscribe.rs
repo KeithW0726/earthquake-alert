@@ -1,5 +1,7 @@
 use crate::db::Database;
-use crate::models::{ApiResponse, SubscribeRequest, Subscription};
+use crate::models::{
+    ApiResponse, CachedEarthquake, SubscribeRequest, Subscription, TestNotifyRequest,
+};
 use crate::utils::{distance, intensity};
 use axum::{
     extract::{Path, State},
@@ -7,11 +9,13 @@ use axum::{
     response::{IntoResponse, Json},
 };
 use serde::Serialize;
+use std::sync::{Arc, Mutex};
 
 /// 应用状态
 #[derive(Clone)]
 pub struct AppState {
     pub db: Database,
+    pub latest_earthquake: Arc<Mutex<Option<CachedEarthquake>>>,
 }
 
 /// 订阅处理器
@@ -245,6 +249,127 @@ pub async fn get_subscription_handler(
         Err(_) => (
             StatusCode::NOT_FOUND,
             Json(ApiResponse::<SubscribeResponse>::error("订阅不存在")),
+        ),
+    }
+}
+
+/// 获取缓存的最近地震数据
+pub async fn test_earthquake_handler(
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let cache = state.latest_earthquake.lock().unwrap();
+    match cache.as_ref() {
+        Some(eq) => (
+            StatusCode::OK,
+            Json(ApiResponse::success("ok", Some(eq.clone()))),
+        ),
+        None => (
+            StatusCode::OK,
+            Json(ApiResponse::<CachedEarthquake>::error("暂无地震数据")),
+        ),
+    }
+}
+
+/// 发送测试通知
+pub async fn test_notify_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<TestNotifyRequest>,
+) -> impl IntoResponse {
+    // 查订阅获取 bark_api_url 和级别设置
+    let store = state.db.subscriptions();
+    let sub = match store.get_subscription(&payload.bark_id) {
+        Ok(s) => s,
+        Err(_) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(ApiResponse::<()>::error("订阅不存在")),
+            );
+        }
+    };
+
+    // 计算距离和预估烈度（复用正式算法）
+    let dist = distance::vincenty_distance(
+        payload.epicenter_lat,
+        payload.epicenter_lon,
+        sub.latitude,
+        sub.longitude,
+    )
+    .unwrap_or(0.0);
+    let estimated_intensity = intensity::estimate_intensity(payload.magnitude, dist);
+
+    // 通知级别判定（与 bark_notifier.rs 逻辑一致）
+    let level_params = if estimated_intensity <= sub.passive_max {
+        "level=passive"
+    } else if estimated_intensity <= sub.active_max {
+        "level=active&volume=5"
+    } else {
+        "level=critical&volume=10&call=1"
+    };
+
+    // 构造消息
+    let arrival_secs = (dist / 3.5).round() as u64;
+    let p_wave_secs = (dist / 6.0).round() as u64;
+
+    let title = format!("地震预警测试 {}秒后到达", arrival_secs);
+    let subtitle = format!(
+        "M{:.1} 预计烈度{} 距{:.0}km",
+        payload.magnitude, estimated_intensity, dist
+    );
+    let body = format!(
+        "[测试] 这是一条模拟预警，不是真实地震。\n\
+         发震: {}\n\
+         地点: {}\n\
+         震源: {:.3}, {:.3} 深度{:.0}km\n\
+         距离: 震中{:.0}km 震源{:.0}km\n\
+         预计: P波+{}秒 S波+{}秒 烈度{}\n\
+         震级: M{:.1} 最大烈度{:.1}\n\
+         来源: test_eew 测试",
+        payload.origin_time,
+        payload.hypocenter,
+        payload.epicenter_lat,
+        payload.epicenter_lon,
+        payload.depth,
+        dist,
+        dist,
+        p_wave_secs,
+        arrival_secs,
+        estimated_intensity,
+        payload.magnitude,
+        payload.max_intensity,
+    );
+
+    // 发送 Bark 通知
+    let base_url = sub.bark_api_url.trim_end_matches('/');
+    let bark_url = format!(
+        "{}/{}/{}/{}/{}?group=地震预警测试&{}",
+        base_url,
+        urlencoding::encode(&sub.bark_id),
+        urlencoding::encode(&title),
+        urlencoding::encode(&subtitle),
+        urlencoding::encode(&body),
+        level_params,
+    );
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .unwrap();
+
+    match client.get(&bark_url).send().await {
+        Ok(resp) if resp.status().is_success() => (
+            StatusCode::OK,
+            Json(ApiResponse::success("测试通知已发送", None::<()>)),
+        ),
+        Ok(resp) => (
+            StatusCode::BAD_GATEWAY,
+            Json(ApiResponse::<()>::error(format!(
+                "Bark 服务返回错误: {}",
+                resp.status()
+            ))),
+        ),
+        Err(e) => (
+            StatusCode::BAD_GATEWAY,
+            Json(ApiResponse::<()>::error(format!("发送失败: {}", e))),
         ),
     }
 }
