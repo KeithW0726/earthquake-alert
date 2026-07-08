@@ -91,50 +91,48 @@ async fn main() -> Result<()> {
         interval.tick().await;
         loop {
             match client.get("https://api.wolfx.jp/cenc_eew.json").send().await {
-                Ok(resp) => match resp.json::<Vec<serde_json::Value>>().await {
-                    Ok(list) => {
-                        if let Some(first) = list.first() {
-                            let eq = CachedEarthquake {
-                                event_id: first
-                                    .get("EventID")
-                                    .and_then(|v| v.as_str())
-                                    .unwrap_or("")
-                                    .to_string(),
-                                origin_time: first
-                                    .get("OriginTime")
-                                    .and_then(|v| v.as_str())
-                                    .unwrap_or("")
-                                    .to_string(),
-                                hypocenter: first
-                                    .get("HypoCenter")
-                                    .and_then(|v| v.as_str())
-                                    .unwrap_or("")
-                                    .to_string(),
-                                latitude: first
-                                    .get("Latitude")
-                                    .and_then(|v| v.as_f64())
-                                    .unwrap_or(0.0),
-                                longitude: first
-                                    .get("Longitude")
-                                    .and_then(|v| v.as_f64())
-                                    .unwrap_or(0.0),
-                                magnitude: first
-                                    .get("Magnitude")
-                                    .or_else(|| first.get("Magunitude"))
-                                    .and_then(|v| v.as_f64())
-                                    .unwrap_or(0.0),
-                                depth: first
-                                    .get("Depth")
-                                    .and_then(|v| v.as_f64())
-                                    .unwrap_or(0.0),
-                                max_intensity: first
-                                    .get("MaxIntensity")
-                                    .and_then(|v| v.as_f64())
-                                    .unwrap_or(0.0),
-                            };
-                            *cache.lock().unwrap() = Some(eq);
-                            tracing::info!("地震缓存已更新");
-                        }
+                Ok(resp) => match resp.json::<serde_json::Value>().await {
+                    Ok(val) => {
+                        let eq = CachedEarthquake {
+                            event_id: val
+                                .get("EventID")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string(),
+                            origin_time: val
+                                .get("OriginTime")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string(),
+                            hypocenter: val
+                                .get("HypoCenter")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string(),
+                            latitude: val
+                                .get("Latitude")
+                                .and_then(|v| v.as_f64())
+                                .unwrap_or(0.0),
+                            longitude: val
+                                .get("Longitude")
+                                .and_then(|v| v.as_f64())
+                                .unwrap_or(0.0),
+                            magnitude: val
+                                .get("Magnitude")
+                                .or_else(|| val.get("Magunitude"))
+                                .and_then(|v| v.as_f64())
+                                .unwrap_or(0.0),
+                            depth: val
+                                .get("Depth")
+                                .and_then(|v| v.as_f64())
+                                .unwrap_or(0.0),
+                            max_intensity: val
+                                .get("MaxIntensity")
+                                .and_then(|v| v.as_f64())
+                                .unwrap_or(0.0),
+                        };
+                        *cache.lock().unwrap() = Some(eq);
+                        tracing::info!("地震缓存已更新");
                     }
                     Err(e) => tracing::warn!("解析地震缓存失败: {:?}", e),
                 },
