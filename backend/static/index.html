@@ -515,7 +515,6 @@
                 font-size: 14px;
                 font-weight: 500;
                 color: var(--text-main);
-                font-family: "SF Mono", "Cascadia Code", ui-monospace, monospace;
                 word-break: break-all;
             }
 
@@ -859,7 +858,7 @@
                                 </div>
                             </div>
                         </div>
-                        <small>默认：预估烈度 0-1 为 passive，2 为 active，3 及以上为 critical + sound/volume + call。</small>
+                        <small>默认：预估烈度 0-1 为 passive，2 为 active，3 及以上为 critical + sound/volume + call。在地图上修改定位，可改变烈度再发送通知。</small>
                     </div>
 
                     <!-- 状态反馈区域 (替代 Log) -->
@@ -897,54 +896,6 @@
                 </form>
             </div>
 
-            <div class="glass-card" id="test-section" style="display:none">
-                <h2>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                        <line x1="12" y1="9" x2="12" y2="13"></line>
-                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                    通知测试
-                </h2>
-                <div id="test-content">
-                    <div class="test-row">
-                        <span class="test-label">地震事件</span>
-                        <span id="te-event" class="test-value">加载中...</span>
-                    </div>
-                    <div class="test-row">
-                        <span class="test-label">发震时间</span>
-                        <span id="te-time" class="test-value"></span>
-                    </div>
-                    <div class="test-row">
-                        <span class="test-label">震中位置</span>
-                        <span id="te-location" class="test-value"></span>
-                    </div>
-                    <div class="test-editable-row">
-                        <div class="test-field">
-                            <label>震级 (Magnitude)</label>
-                            <input type="number" id="te-mag" step="0.1" min="0" max="10">
-                        </div>
-                        <div class="test-field">
-                            <label>深度 (km)</label>
-                            <input type="number" id="te-depth" step="1" min="0" max="1000">
-                        </div>
-                        <div class="test-field">
-                            <label>最大烈度</label>
-                            <input type="number" id="te-max-int" step="0.1" min="0" max="10">
-                        </div>
-                    </div>
-                    <div class="test-calc">
-                        <span>预计距离: <strong id="te-dist">-</strong> km</span>
-                        <span>预估烈度: <strong id="te-int">-</strong></span>
-                        <span>S波到达: <strong id="te-arrival">-</strong></span>
-                    </div>
-                    <button id="test-send-btn" class="btn-primary" style="margin-top:16px;width:100%">
-                        发送测试通知
-                    </button>
-                    <div id="test-result" class="test-result"></div>
-                </div>
-            </div>
-
             <div class="glass-card" id="status-section" style="display:none">
                 <h2>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -967,6 +918,52 @@
                     <dt>更新时间</dt>
                     <dd id="s-updated"></dd>
                 </dl>
+            </div>
+
+            <div class="glass-card" id="test-section" style="display:none">
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    通知测试
+                </h2>
+                <div id="test-content">
+                    <div class="test-row">
+                        <span class="test-label">地震事件</span>
+                        <span id="te-event" class="test-value">加载中...</span>
+                    </div>
+                    <div class="test-row">
+                        <span class="test-label">发震时间</span>
+                        <span id="te-time" class="test-value"></span>
+                    </div>
+                    <div class="test-row">
+                        <span class="test-label">震中位置</span>
+                        <span id="te-location" class="test-value"></span>
+                    </div>
+                    <div class="test-row">
+                        <span class="test-label">震级 (Magnitude)</span>
+                        <span id="te-mag-display" class="test-value"></span>
+                    </div>
+                    <div class="test-row">
+                        <span class="test-label">深度 (km)</span>
+                        <span id="te-depth-display" class="test-value"></span>
+                    </div>
+                    <div class="test-row">
+                        <span class="test-label">最大烈度</span>
+                        <span id="te-max-int-display" class="test-value"></span>
+                    </div>
+                    <div class="test-calc">
+                        <span>预计距离: <strong id="te-dist">-</strong> km</span>
+                        <span>预估烈度: <strong id="te-int">-</strong></span>
+                        <span>S波到达: <strong id="te-arrival">-</strong></span>
+                    </div>
+                    <button id="test-send-btn" class="btn-primary" style="margin-top:16px;width:100%">
+                        发送测试通知
+                    </button>
+                    <div id="test-result" class="test-result"></div>
+                </div>
             </div>
 
             <footer>
@@ -1172,9 +1169,9 @@
             const teEvent = document.getElementById("te-event");
             const teTime = document.getElementById("te-time");
             const teLocation = document.getElementById("te-location");
-            const teMag = document.getElementById("te-mag");
-            const teDepth = document.getElementById("te-depth");
-            const teMaxInt = document.getElementById("te-max-int");
+            const teMag = document.getElementById("te-mag-display");
+            const teDepth = document.getElementById("te-depth-display");
+            const teMaxInt = document.getElementById("te-max-int-display");
             const teDist = document.getElementById("te-dist");
             const teInt = document.getElementById("te-int");
             const teArrival = document.getElementById("te-arrival");
@@ -1224,9 +1221,9 @@
                         teEvent.textContent = d.event_id;
                         teTime.textContent = d.origin_time;
                         teLocation.textContent = `${d.hypocenter} (${d.latitude.toFixed(3)}, ${d.longitude.toFixed(3)})`;
-                        teMag.value = d.magnitude;
-                        teDepth.value = d.depth;
-                        teMaxInt.value = d.max_intensity;
+                        teMag.textContent = d.magnitude;
+                        teDepth.textContent = d.depth;
+                        teMaxInt.textContent = d.max_intensity;
                         calcTestPreview();
                     } else {
                         teEvent.textContent = "暂无地震数据";
@@ -1237,23 +1234,18 @@
             }
 
             function calcTestPreview() {
-                const mag = parseFloat(teMag.value) || 0;
-                const depth = parseFloat(teDepth.value) || 0;
-                // 粗略估算距离和烈度显示（仅前端预览，实际发通知时服务端精确计算）
+                const mag = parseFloat(teMag.textContent) || 0;
+                const depth = parseFloat(teDepth.textContent) || 0;
                 const lat = parseFloat(latInput.value);
                 const lon = parseFloat(lonInput.value);
-                if (lat && lon && mag > 0) {
-                    const dist = Math.round(111 * Math.sqrt((lat - 28.5) ** 2 + (lon - 104.5) ** 2));
+                if (lat && lon && mag > 0 && testEarthquakeData) {
+                    var dist = Math.round(111 * Math.sqrt((lat - testEarthquakeData.latitude) ** 2 + (lon - testEarthquakeData.longitude) ** 2));
                     teDist.textContent = dist;
-                    const estInt = Math.min(Math.max(Math.round(mag * 1.5 - 2.5 - 2.0 * Math.log10(dist + 10) + 1.0), 0), 7);
+                    var estInt = Math.min(Math.max(Math.round(mag * 1.5 - 2.5 - 2.0 * Math.log10(dist + 10) + 1.0), 0), 7);
                     teInt.textContent = estInt;
                     teArrival.textContent = Math.round(dist / 3.5) + "s";
                 }
             }
-
-            teMag.addEventListener("input", calcTestPreview);
-            teDepth.addEventListener("input", calcTestPreview);
-            teMaxInt.addEventListener("input", calcTestPreview);
 
             testSendBtn.addEventListener("click", async () => {
                 const barkId = document.getElementById("bark-id").value.trim();
@@ -1277,9 +1269,9 @@
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             bark_id: barkId,
-                            magnitude: parseFloat(teMag.value) || 0,
-                            depth: parseFloat(teDepth.value) || 0,
-                            max_intensity: parseFloat(teMaxInt.value) || 0,
+                            magnitude: parseFloat(teMag.textContent) || 0,
+                            depth: parseFloat(teDepth.textContent) || 0,
+                            max_intensity: parseFloat(teMaxInt.textContent) || 0,
                             epicenter_lat: testEarthquakeData.latitude,
                             epicenter_lon: testEarthquakeData.longitude,
                             hypocenter: testEarthquakeData.hypocenter,
