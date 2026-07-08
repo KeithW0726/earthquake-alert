@@ -303,7 +303,7 @@ pub async fn test_notify_handler(
     } else if estimated_intensity <= sub.active_max {
         "level=active&volume=5"
     } else {
-        "level=critical&volume=10&call=1&sound=Alert"
+        "level=critical&volume=10&call=1&sound=alarm"
     };
 
     tracing::info!(
