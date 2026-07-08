@@ -907,8 +907,8 @@
                                     <div class="setting-note">低于此预估烈度的预警不会推送；达到阈值后再按下方规则选择 Bark 级别。</div>
                                 </div>
                                 <select id="min-intensity" aria-label="推送阈值">
-                                    <option value="0" selected>烈度 0 起推送</option>
-                                    <option value="1">烈度 1 起推送</option>
+                                    <option value="0">烈度 0 起推送</option>
+                                    <option value="1" selected>烈度 1 起推送</option>
                                     <option value="2">烈度 2 起推送</option>
                                     <option value="3">烈度 3 起推送</option>
                                     <option value="4">烈度 4 起推送</option>
@@ -919,7 +919,7 @@
                                 <div class="rule-row">
                                     <div>
                                         <div class="rule-name">低烈度</div>
-                                        <div class="rule-desc">不打扰</div>
+                                        <div class="rule-desc">不打扰，只显示通知，不提醒</div>
                                     </div>
                                     <div class="range-fields">
                                         <input id="passive-start" type="number" value="0" readonly aria-label="passive 起始烈度">
@@ -931,7 +931,7 @@
                                 <div class="rule-row">
                                     <div>
                                         <div class="rule-name">中等烈度</div>
-                                        <div class="rule-desc">主动提醒</div>
+                                        <div class="rule-desc">主动提醒，显示通知并提醒</div>
                                     </div>
                                     <div class="range-fields">
                                         <input id="active-start" type="number" value="2" readonly aria-label="active 起始烈度">
@@ -943,7 +943,7 @@
                                 <div class="rule-row">
                                     <div>
                                         <div class="rule-name">高烈度</div>
-                                        <div class="rule-desc">强提醒</div>
+                                        <div class="rule-desc">强提醒，无视设备状态大音量强通知</div>
                                     </div>
                                     <div class="range-fields open-range">
                                         <input id="critical-min" type="number" value="3" readonly aria-label="critical 起始烈度">
@@ -953,7 +953,7 @@
                                 </div>
                             </div>
                         </div>
-                        <small>默认：预估烈度 0-1 为 passive，2 为 active，3 及以上为 critical + sound/volume + call。在地图上修改定位，可改变烈度再发送通知。</small>
+                        <small>默认：预估烈度 0-1 为 passive，2 为 active，3 及以上为 critical + sound/volume + call。在地图上修改定位并保存，可改变预估烈度并在下方发送测试通知。</small>
                     </div>
 
                     <!-- 状态反馈区域 (替代 Log) -->
