@@ -57,6 +57,7 @@ async fn main() -> Result<()> {
                 .allow_methods(Any)
                 .allow_headers(Any),
         )
+        .fallback(get(index_handler))
         .with_state(state);
 
     // 启动服务器
@@ -80,7 +81,12 @@ async fn main() -> Result<()> {
 
     // 启动 HTTP 服务器
     let listener = tokio::net::TcpListener::bind(&addr).await?;
+    tracing::info!("前端页面: http://{}", addr);
     axum::serve(listener, app).await?;
 
     Ok(())
+}
+
+async fn index_handler() -> impl axum::response::IntoResponse {
+    axum::response::Html(include_str!("../static/index.html"))
 }

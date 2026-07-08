@@ -1,0 +1,44 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev
+
+      - name: Build
+        run: cargo build --release
+        working-directory: backend
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: earthquake-alert-backend-linux
+          path: backend/target/release/earthquake-alert-backend
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        run: cargo build --release
+        working-directory: backend
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: earthquake-alert-backend-windows
+          path: backend/target/release/earthquake-alert-backend.exe
