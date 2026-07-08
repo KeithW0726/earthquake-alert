@@ -253,17 +253,6 @@
                 z-index: 1;
             }
 
-            /* 地图暗色模式滤镜：反转颜色但保持色相旋转，使海洋保持蓝色系 */
-            @media (prefers-color-scheme: dark) {
-                .leaflet-tile-pane {
-                    filter: invert(100%) hue-rotate(180deg) brightness(95%)
-                        contrast(90%);
-                }
-                /* 防止地图上的文字/标记也被反转，如果只是简单的底图反转可以保留。
-                   如果觉得 Marker 颜色不对，可以单独处理 Marker，但在 Leaflet DOM 结构中较复杂。
-                   通常上面的滤镜对于浅色底图变深色已经足够好看。 */
-            }
-
             /* 推送与通知级别卡片 */
             .notify-card {
                 background: var(--card-bg);
@@ -1046,24 +1035,68 @@
                 attributionControl: false,
             }).setView([35.0, 105.0], 4);
 
+            // WGS-84 ↔ GCJ-02 坐标转换（高德地图纠偏）
+            function wgs2gcj(wgsLat, wgsLng) {
+                var a = 6378245.0, ee = 0.00669342162296594323;
+                function transform(x, y) {
+                    var xy = x * y, absX = Math.sqrt(Math.abs(x));
+                    var xPi = x * Math.PI, yPi = y * Math.PI;
+                    var lat = -100 + 2 * x + 3 * y + 0.2 * y * y + 0.1 * xy + 0.2 * absX;
+                    lat += (20 * Math.sin(6 * xPi) + 20 * Math.sin(2 * xPi) + 20 * Math.sin(yPi) + 40 * Math.sin(yPi / 3) + 160 * Math.sin(yPi / 12) + 320 * Math.sin(yPi / 30)) * 2 / 3;
+                    var lng = 300 + x + 2 * y + 0.1 * x * x + 0.1 * xy + 0.1 * absX;
+                    lng += (20 * Math.sin(6 * xPi) + 20 * Math.sin(2 * xPi) + 20 * Math.sin(xPi) + 40 * Math.sin(xPi / 3) + 150 * Math.sin(xPi / 12) + 300 * Math.sin(xPi / 30)) * 2 / 3;
+                    return { lat: lat, lng: lng };
+                }
+                var d = transform(wgsLng - 105, wgsLat - 35);
+                var radLat = wgsLat / 180 * Math.PI;
+                var magic = 1 - ee * Math.sin(radLat) * Math.sin(radLat);
+                var sqrtMagic = Math.sqrt(magic);
+                d.lat = (d.lat * 180) / ((a * (1 - ee)) / (magic * sqrtMagic) * Math.PI);
+                d.lng = (d.lng * 180) / (a / sqrtMagic * Math.cos(radLat) * Math.PI);
+                return { lat: wgsLat + d.lat, lng: wgsLng + d.lng };
+            }
+
+            function gcj2wgs(gcjLat, gcjLng) {
+                var a = 6378245.0, ee = 0.00669342162296594323;
+                function transform(x, y) {
+                    var xy = x * y, absX = Math.sqrt(Math.abs(x));
+                    var xPi = x * Math.PI, yPi = y * Math.PI;
+                    var lat = -100 + 2 * x + 3 * y + 0.2 * y * y + 0.1 * xy + 0.2 * absX;
+                    lat += (20 * Math.sin(6 * xPi) + 20 * Math.sin(2 * xPi) + 20 * Math.sin(yPi) + 40 * Math.sin(yPi / 3) + 160 * Math.sin(yPi / 12) + 320 * Math.sin(yPi / 30)) * 2 / 3;
+                    var lng = 300 + x + 2 * y + 0.1 * x * x + 0.1 * xy + 0.1 * absX;
+                    lng += (20 * Math.sin(6 * xPi) + 20 * Math.sin(2 * xPi) + 20 * Math.sin(xPi) + 40 * Math.sin(xPi / 3) + 150 * Math.sin(xPi / 12) + 300 * Math.sin(xPi / 30)) * 2 / 3;
+                    return { lat: lat, lng: lng };
+                }
+                var d = transform(gcjLng - 105, gcjLat - 35);
+                var radLat = gcjLat / 180 * Math.PI;
+                var magic = 1 - ee * Math.sin(radLat) * Math.sin(radLat);
+                var sqrtMagic = Math.sqrt(magic);
+                d.lat = (d.lat * 180) / ((a * (1 - ee)) / (magic * sqrtMagic) * Math.PI);
+                d.lng = (d.lng * 180) / (a / sqrtMagic * Math.cos(radLat) * Math.PI);
+                return { lat: gcjLat - d.lat, lng: gcjLng - d.lng };
+            }
+
+            // 高德地图瓦片
             L.tileLayer(
-                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-                { maxZoom: 19 },
+                "https://wprd0{s}.is.autonavi.com/appmaptile?x={x}&y={y}&z={z}&lang=zh_cn&size=1&scl=1&style=7",
+                { subdomains: "1234", maxNativeZoom: 19, maxZoom: 20 },
             ).addTo(map);
 
             let marker = null;
 
-            function updateMarker(lat, lon, zoom = 10) {
+            function updateMarker(wgsLat, wgsLon, zoom = 10) {
+                var gcj = wgs2gcj(wgsLat, wgsLon);
                 if (marker) {
-                    marker.setLatLng([lat, lon]);
+                    marker.setLatLng([gcj.lat, gcj.lng]);
                 } else {
-                    marker = L.marker([lat, lon]).addTo(map);
+                    marker = L.marker([gcj.lat, gcj.lng]).addTo(map);
                 }
-                map.setView([lat, lon], zoom);
+                map.setView([gcj.lat, gcj.lng], zoom);
             }
 
             map.on("click", (e) => {
-                setPosition(e.latlng.lat, e.latlng.lng);
+                var wgs = gcj2wgs(e.latlng.lat, e.latlng.lng);
+                setPosition(wgs.lat, wgs.lng);
             });
 
             function setPosition(lat, lon) {
