@@ -10,6 +10,10 @@ pub struct Subscription {
     pub min_intensity: u8, // 最小烈度阈值 (0-7)
     #[serde(default = "default_bark_api_url")]
     pub bark_api_url: String,
+    #[serde(default = "default_passive_max")]
+    pub passive_max: u8,
+    #[serde(default = "default_active_max")]
+    pub active_max: u8,
     pub created_at: i64,
 }
 
@@ -20,6 +24,8 @@ impl Subscription {
         longitude: f64,
         min_intensity: u8,
         bark_api_url: String,
+        passive_max: u8,
+        active_max: u8,
     ) -> Self {
         let created_at = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -32,6 +38,8 @@ impl Subscription {
             longitude,
             min_intensity,
             bark_api_url,
+            passive_max,
+            active_max,
             created_at,
         }
     }
@@ -47,6 +55,10 @@ pub struct SubscribeRequest {
     pub min_intensity: u8, // 最小烈度阈值，默认 3
     #[serde(default = "default_bark_api_url")]
     pub bark_api_url: String,
+    #[serde(default = "default_passive_max")]
+    pub passive_max: u8,
+    #[serde(default = "default_active_max")]
+    pub active_max: u8,
 }
 
 fn default_min_intensity() -> u8 {
@@ -55,6 +67,14 @@ fn default_min_intensity() -> u8 {
 
 fn default_bark_api_url() -> String {
     "https://api.day.app".to_string()
+}
+
+fn default_passive_max() -> u8 {
+    1
+}
+
+fn default_active_max() -> u8 {
+    2
 }
 
 /// API 响应

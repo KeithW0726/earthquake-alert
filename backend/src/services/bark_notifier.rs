@@ -43,6 +43,21 @@ impl BarkNotifier {
         distance_km: f64,
         estimated_intensity: u8,
     ) -> Result<()> {
+        // 根据预估烈度确定 Bark 通知级别
+        let level = if estimated_intensity <= subscription.passive_max {
+            "passive"
+        } else if estimated_intensity <= subscription.active_max {
+            "active"
+        } else {
+            "critical"
+        };
+
+        let level_params = match level {
+            "passive" => "level=passive",
+            "active" => "level=active&volume=5",
+            _ => "level=critical&volume=10&call=1",
+        };
+
         // Title: 简洁有力，显示震级（最显眼）
         let title = format!("地震预警 M{:.1}", earthquake.magnitude);
 
@@ -67,7 +82,7 @@ impl BarkNotifier {
             region_text, earthquake.depth, earthquake.max_intensity,
         );
 
-        self.send_notification(&subscription.bark_api_url, &subscription.bark_id, &title, &subtitle, &body)
+        self.send_notification(&subscription.bark_api_url, &subscription.bark_id, level_params, &title, &subtitle, &body)
             .await
     }
 
@@ -76,6 +91,7 @@ impl BarkNotifier {
         &self,
         api_url: &str,
         bark_id: &str,
+        level_params: &str,
         title: &str,
         subtitle: &str,
         body: &str,
@@ -94,12 +110,13 @@ impl BarkNotifier {
 
         // Bark 推送格式: /:key/:title/:subtitle/:body?params
         let url = format!(
-            "{}/{}/{}/{}/{}?group=地震预警&level=critical&volume=10",
+            "{}/{}/{}/{}/{}?group=地震预警&{}",
             base_url.trim_end_matches('/'),
             urlencoding::encode(bark_id),
             title_encoded,
             subtitle_encoded,
-            body_encoded
+            body_encoded,
+            level_params,
         );
 
         // 带重试的发送逻辑

@@ -264,6 +264,158 @@
                    通常上面的滤镜对于浅色底图变深色已经足够好看。 */
             }
 
+            /* 推送与通知级别卡片 */
+            .notify-card {
+                background: var(--card-bg);
+                border-radius: 14px;
+                padding: 20px;
+                margin-bottom: 8px;
+                border: 1px solid var(--input-border);
+            }
+
+            .threshold-row {
+                display: flex;
+                align-items: flex-start;
+                gap: 16px;
+                padding-bottom: 16px;
+                border-bottom: 1px solid var(--input-border);
+                margin-bottom: 16px;
+            }
+
+            .threshold-row > div {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .threshold-row select {
+                width: auto;
+                min-width: 140px;
+                flex-shrink: 0;
+            }
+
+            .setting-title {
+                font-size: 14px;
+                font-weight: 600;
+                margin-bottom: 4px;
+                color: var(--text-main);
+            }
+
+            .setting-note {
+                font-size: 12px;
+                color: var(--text-secondary);
+                line-height: 1.4;
+            }
+
+            .rule-rows {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .rule-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 8px 12px;
+                border-radius: 10px;
+                background: var(--input-bg);
+                border: 1px solid var(--input-border);
+                transition: var(--transition);
+            }
+
+            .rule-row > div:first-child {
+                min-width: 60px;
+            }
+
+            .rule-name {
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--text-main);
+            }
+
+            .rule-desc {
+                font-size: 11px;
+                color: var(--text-secondary);
+            }
+
+            .range-fields {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 13px;
+                color: var(--text-secondary);
+            }
+
+            .range-fields input[type="number"] {
+                width: 52px;
+                height: 34px;
+                padding: 0 6px;
+                font-size: 14px;
+                text-align: center;
+                border: 1px solid var(--input-border);
+                border-radius: 8px;
+                background: var(--card-bg);
+                color: var(--text-main);
+                appearance: textfield;
+            }
+
+            .range-fields input[type="number"]:read-only {
+                opacity: 0.6;
+                cursor: default;
+            }
+
+            .range-fields input[type="number"]:not(:read-only):focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.12);
+            }
+
+            .range-fields input[type="number"]::-webkit-inner-spin-button,
+            .range-fields input[type="number"]::-webkit-outer-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            .open-range span {
+                white-space: nowrap;
+            }
+
+            .level-pill {
+                font-size: 11px;
+                font-weight: 600;
+                padding: 4px 10px;
+                border-radius: 20px;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+
+            .level-passive {
+                background: rgba(142, 142, 147, 0.2);
+                color: var(--text-secondary);
+            }
+
+            .level-active {
+                background: rgba(255, 193, 7, 0.2);
+                color: #b8860b;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .level-active {
+                    color: #fbbf24;
+                }
+            }
+
+            .level-critical {
+                background: rgba(239, 68, 68, 0.2);
+                color: #dc2626;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .level-critical {
+                    color: #f87171;
+                }
+            }
+
             /* 状态反馈区域 */
             .status-container {
                 margin-top: 24px;
@@ -550,18 +702,61 @@
                     </div>
 
                     <div class="field">
-                        <label>通知触发阈值</label>
-                        <select id="min-intensity">
-                            <option value="0">震度 0 (所有预警)</option>
-                            <option value="1">震度 1 (微有感)</option>
-                            <option value="2">震度 2 (轻微摇晃)</option>
-                            <option value="3" selected>
-                                震度 3 (显著摇晃 - 推荐)
-                            </option>
-                            <option value="4">震度 4 (强烈摇晃)</option>
-                            <option value="5">震度 5 (破坏性)</option>
-                        </select>
-                        <small>仅当所在地预估震度 >= 此值时推送。</small>
+                        <label>推送与通知级别</label>
+                        <div class="notify-card">
+                            <div class="threshold-row">
+                                <div>
+                                    <div class="setting-title">推送阈值</div>
+                                    <div class="setting-note">低于此预估烈度的预警不会推送；达到阈值后再按下方规则选择 Bark 级别。</div>
+                                </div>
+                                <select id="min-intensity" aria-label="推送阈值">
+                                    <option value="0" selected>烈度 0 起推送</option>
+                                    <option value="1">烈度 1 起推送</option>
+                                    <option value="2">烈度 2 起推送</option>
+                                    <option value="3">烈度 3 起推送</option>
+                                    <option value="4">烈度 4 起推送</option>
+                                    <option value="5">烈度 5 起推送</option>
+                                </select>
+                            </div>
+                            <div class="rule-rows">
+                                <div class="rule-row">
+                                    <div>
+                                        <div class="rule-name">低烈度</div>
+                                        <div class="rule-desc">不打扰</div>
+                                    </div>
+                                    <div class="range-fields">
+                                        <input id="passive-start" type="number" value="0" readonly aria-label="passive 起始烈度">
+                                        <span>到</span>
+                                        <input id="passive-max" type="number" min="0" max="5" step="1" value="1" aria-label="passive 最高烈度">
+                                    </div>
+                                    <div class="level-pill level-passive">passive</div>
+                                </div>
+                                <div class="rule-row">
+                                    <div>
+                                        <div class="rule-name">中等烈度</div>
+                                        <div class="rule-desc">主动提醒</div>
+                                    </div>
+                                    <div class="range-fields">
+                                        <input id="active-start" type="number" value="2" readonly aria-label="active 起始烈度">
+                                        <span>到</span>
+                                        <input id="active-max" type="number" min="1" max="6" step="1" value="2" aria-label="active 最高烈度">
+                                    </div>
+                                    <div class="level-pill level-active">active</div>
+                                </div>
+                                <div class="rule-row">
+                                    <div>
+                                        <div class="rule-name">高烈度</div>
+                                        <div class="rule-desc">强提醒</div>
+                                    </div>
+                                    <div class="range-fields open-range">
+                                        <input id="critical-min" type="number" value="3" readonly aria-label="critical 起始烈度">
+                                        <span>及以上</span>
+                                    </div>
+                                    <div class="level-pill level-critical">critical + call</div>
+                                </div>
+                            </div>
+                        </div>
+                        <small>默认：预估烈度 0-1 为 passive，2 为 active，3 及以上为 critical + sound/volume + call。</small>
                     </div>
 
                     <!-- 状态反馈区域 (替代 Log) -->
@@ -723,6 +918,27 @@
                 );
             });
 
+            // 烈度范围自动联动
+            const passiveMax = document.getElementById("passive-max");
+            const activeStart = document.getElementById("active-start");
+            const activeMax = document.getElementById("active-max");
+            const criticalMin = document.getElementById("critical-min");
+
+            function syncRanges() {
+                const pm = parseInt(passiveMax.value) || 0;
+                let am = parseInt(activeMax.value) || 1;
+                if (am < pm + 1) am = pm + 1;
+                activeMax.value = am;
+                activeStart.value = pm + 1;
+                criticalMin.value = am + 1;
+                passiveMax.max = am - 1;
+                if (passiveMax.max < 0) passiveMax.max = 0;
+                activeMax.min = pm + 1;
+            }
+
+            passiveMax.addEventListener("input", syncRanges);
+            activeMax.addEventListener("input", syncRanges);
+
             // 提交订阅
             form.addEventListener("submit", async (e) => {
                 e.preventDefault();
@@ -737,6 +953,8 @@
                     min_intensity: parseInt(
                         document.getElementById("min-intensity").value,
                     ),
+                    passive_max: parseInt(passiveMax.value) || 1,
+                    active_max: parseInt(activeMax.value) || 2,
                     bark_api_url: bark_api_url || "https://api.day.app",
                 };
 
@@ -760,6 +978,14 @@
                         localStorage.setItem(
                             "bark_api_url",
                             data.bark_api_url,
+                        );
+                        localStorage.setItem(
+                            "passive_max",
+                            String(data.passive_max),
+                        );
+                        localStorage.setItem(
+                            "active_max",
+                            String(data.active_max),
                         );
                         localStorage.setItem(
                             "last_pos",
@@ -842,6 +1068,16 @@
                 const savedApiUrl = localStorage.getItem("bark_api_url");
                 if (savedApiUrl)
                     document.getElementById("bark-api-url").value = savedApiUrl;
+
+                const savedPm = localStorage.getItem("passive_max");
+                if (savedPm) {
+                    passiveMax.value = savedPm;
+                }
+                const savedAm = localStorage.getItem("active_max");
+                if (savedAm) {
+                    activeMax.value = savedAm;
+                }
+                syncRanges();
 
                 const savedPos = JSON.parse(localStorage.getItem("last_pos"));
                 if (savedPos) setPosition(savedPos.lat, savedPos.lon);

@@ -70,6 +70,8 @@ pub async fn subscribe_handler(
         payload.longitude,
         payload.min_intensity,
         payload.bark_api_url.clone(),
+        payload.passive_max,
+        payload.active_max,
     );
 
     // 打印订阅信息
@@ -178,6 +180,8 @@ pub struct SubscribeResponse {
     pub longitude: f64,
     pub min_intensity: u8,
     pub bark_api_url: String,
+    pub passive_max: u8,
+    pub active_max: u8,
     pub created_at: i64,
 }
 
@@ -189,6 +193,8 @@ impl From<Subscription> for SubscribeResponse {
             longitude: sub.longitude,
             min_intensity: sub.min_intensity,
             bark_api_url: sub.bark_api_url,
+            passive_max: sub.passive_max,
+            active_max: sub.active_max,
             created_at: sub.created_at,
         }
     }
