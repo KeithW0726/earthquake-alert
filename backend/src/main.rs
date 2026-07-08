@@ -1,6 +1,5 @@
 mod config;
 mod db;
-mod event_cache;
 mod models;
 mod routes;
 mod services;
@@ -13,10 +12,9 @@ use axum::{
 };
 use config::Config;
 use db::Database;
-use event_cache::EventCache;
 use routes::{
-    AppState, get_subscription_handler, health_handler, history_handler, stats_handler,
-    subscribe_handler, test_notification_handler, unsubscribe_by_path_handler,
+    AppState, get_subscription_handler, health_handler, stats_handler, subscribe_handler,
+    unsubscribe_by_path_handler,
 };
 use services::EarthquakeMonitor;
 use std::net::SocketAddr;
@@ -42,15 +40,8 @@ async fn main() -> Result<()> {
     let db = Database::open(&config.db_path)?;
     tracing::info!("数据库已打开: {}", config.db_path);
 
-    // 创建事件缓存
-    let event_cache = EventCache::new();
-
     // 创建应用状态
-    let state = AppState {
-        db: db.clone(),
-        event_cache: event_cache.clone(),
-        bark_api_url: config.bark_api_url.clone(),
-    };
+    let state = AppState { db: db.clone() };
 
     // 创建路由
     let app = Router::new()
@@ -65,8 +56,6 @@ async fn main() -> Result<()> {
             "/api/subscription/{bark_id}",
             get(get_subscription_handler),
         )
-        .route("/api/history", get(history_handler))
-        .route("/api/test", post(test_notification_handler))
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
@@ -88,7 +77,6 @@ async fn main() -> Result<()> {
         config.http_pool_size,
         config.max_concurrent_notifications,
         config.batch_size,
-        event_cache,
     );
     tokio::spawn(async move {
         if let Err(e) = monitor.start().await {

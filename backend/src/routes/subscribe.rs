@@ -1,21 +1,17 @@
 use crate::db::Database;
-use crate::event_cache::EventCache;
-use crate::models::{ApiResponse, CachedEvent, SubscribeRequest, Subscription};
+use crate::models::{ApiResponse, SubscribeRequest, Subscription};
 use crate::utils::{distance, intensity};
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Json},
 };
-use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use serde::Serialize;
 
 /// 应用状态
 #[derive(Clone)]
 pub struct AppState {
     pub db: Database,
-    pub event_cache: EventCache,
-    pub bark_api_url: String,
 }
 
 /// 订阅处理器
@@ -232,202 +228,6 @@ pub async fn stats_handler(State(state): State<AppState>) -> impl IntoResponse {
                 ))),
             )
         }
-    }
-}
-
-/// 历史查询参数
-#[derive(Debug, Deserialize)]
-pub struct HistoryQuery {
-    pub source: Option<String>,
-    pub min_mag: Option<f64>,
-    pub page: Option<usize>,
-}
-
-/// 历史事件查询响应
-#[derive(Debug, Serialize)]
-pub struct HistoryResponse {
-    pub events: Vec<CachedEvent>,
-    pub total_pages: usize,
-    pub page: usize,
-}
-
-/// 获取历史地震事件
-pub async fn history_handler(
-    State(state): State<AppState>,
-    Query(params): Query<HistoryQuery>,
-) -> impl IntoResponse {
-    let page = params.page.unwrap_or(1).max(1);
-    let min_mag = params.min_mag.unwrap_or(0.0);
-    let source = params.source.as_deref();
-
-    let (events, total_pages) = state
-        .event_cache
-        .list(source, min_mag, page, 10)
-        .await;
-
-    (
-        StatusCode::OK,
-        Json(ApiResponse::success(
-            "ok",
-            Some(HistoryResponse {
-                events,
-                total_pages,
-                page,
-            }),
-        )),
-    )
-}
-
-/// 测试通知请求
-#[derive(Debug, Deserialize)]
-pub struct TestRequest {
-    pub bark_id: String,
-    pub event_id: String,
-}
-
-/// 测试通知响应
-#[derive(Debug, Serialize)]
-pub struct TestResponse {
-    pub level: String,
-    pub estimated_intensity: u8,
-    pub distance_km: f64,
-    pub magnitude: f64,
-    pub region: String,
-}
-
-/// 用历史数据发送测试通知
-pub async fn test_notification_handler(
-    State(state): State<AppState>,
-    Json(payload): Json<TestRequest>,
-) -> impl IntoResponse {
-    let store = state.db.subscriptions();
-
-    let subscription = match store.get_subscription(&payload.bark_id) {
-        Ok(sub) => sub,
-        Err(_) => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(ApiResponse::<TestResponse>::error("订阅不存在，请先订阅")),
-            );
-        }
-    };
-
-    let event = match state.event_cache.get_by_id(&payload.event_id).await {
-        Some(e) => e,
-        None => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(ApiResponse::<TestResponse>::error("事件不存在或已过期")),
-            );
-        }
-    };
-
-    // 计算距离和预估烈度
-    let dist = distance::vincenty_distance(
-        event.latitude,
-        event.longitude,
-        subscription.latitude,
-        subscription.longitude,
-    )
-    .unwrap_or(0.0);
-
-    let estimated_intensity = intensity::estimate_intensity(event.magnitude, dist);
-
-    if estimated_intensity < subscription.min_intensity {
-        return (
-            StatusCode::OK,
-            Json(ApiResponse::success(
-                "测试未达到推送阈值，未发送通知",
-                Some(TestResponse {
-                    level: String::new(),
-                    estimated_intensity,
-                    distance_km: dist,
-                    magnitude: event.magnitude,
-                    region: event.region.clone(),
-                }),
-            )),
-        );
-    }
-
-    // 确定通知级别
-    let (level, level_params) =
-        if estimated_intensity <= subscription.passive_max {
-            ("passive", "level=passive")
-        } else if estimated_intensity <= subscription.active_max {
-            ("active", "level=active&volume=5")
-        } else {
-            ("critical", "level=critical&volume=10&call=1")
-        };
-
-    // 构建通知内容
-    let title = format!("地震预警 M{:.1} (测试)", event.magnitude);
-    let subtitle = format!("震度 {} 级 · 距离 {:.1} km", estimated_intensity, dist);
-    let body = format!(
-        "震央: {}\n震源深度: {:.0} km\n最大震度: {} 级\n\n* 此为历史数据测试通知 *",
-        event.region, event.depth, event.max_intensity,
-    );
-
-    let base_url = if subscription.bark_api_url.is_empty() {
-        &state.bark_api_url
-    } else {
-        &subscription.bark_api_url
-    };
-
-    let url = format!(
-        "{}/{}/{}/{}/{}?group=地震预警测试&{}",
-        base_url.trim_end_matches('/'),
-        urlencoding::encode(&payload.bark_id),
-        urlencoding::encode(&title),
-        urlencoding::encode(&subtitle),
-        urlencoding::encode(&body),
-        level_params,
-    );
-
-    // 发送通知
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(10))
-        .build()
-        .unwrap();
-
-    match client.get(&url).send().await {
-        Ok(resp) if resp.status().is_success() => {
-            tracing::info!(
-                "测试通知发送成功: bark_id={}, event={}, level={}",
-                payload.bark_id,
-                payload.event_id,
-                level
-            );
-            (
-                StatusCode::OK,
-                Json(ApiResponse::success(
-                    format!("测试通知已发送（级别: {}）", level),
-                    Some(TestResponse {
-                        level: level.to_string(),
-                        estimated_intensity,
-                        distance_km: dist,
-                        magnitude: event.magnitude,
-                        region: event.region.clone(),
-                    }),
-                )),
-            )
-        }
-        Ok(resp) => {
-            let status = resp.status();
-            (
-                StatusCode::OK,
-                Json(ApiResponse::<TestResponse>::error(format!(
-                    "Bark 服务器返回错误: {}",
-                    status
-                ))),
-            )
-        }
-        Err(e) => (
-            StatusCode::OK,
-            Json(ApiResponse::<TestResponse>::error(format!(
-                "网络请求失败: {}",
-                e
-            ))),
-        ),
     }
 }
 
