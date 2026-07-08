@@ -303,8 +303,17 @@ pub async fn test_notify_handler(
     } else if estimated_intensity <= sub.active_max {
         "level=active&volume=5"
     } else {
-        "level=critical&volume=10&call=1"
+        "level=critical&volume=10&call=1&sound=Alert"
     };
+
+    tracing::info!(
+        "测试通知 - bark_id={}, estimated_intensity={}, passive_max={}, active_max={}, level_params={}",
+        payload.bark_id,
+        estimated_intensity,
+        sub.passive_max,
+        sub.active_max,
+        level_params
+    );
 
     // 构造消息
     let arrival_secs = (dist / 3.5).round() as u64;
