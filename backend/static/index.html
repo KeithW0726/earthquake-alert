@@ -479,6 +479,19 @@
                     </div>
 
                     <div class="field">
+                        <label>Bark 服务器地址</label>
+                        <input
+                            type="url"
+                            id="bark-api-url"
+                            value="https://api.day.app"
+                            autocomplete="off"
+                        />
+                        <small
+                            >默认 Bark 官方服务器，自建服务器请填写完整地址。</small
+                        >
+                    </div>
+
+                    <div class="field">
                         <label>监测位置</label>
                         <div id="map-container">
                             <div id="map"></div>
@@ -714,6 +727,9 @@
             form.addEventListener("submit", async (e) => {
                 e.preventDefault();
                 const btn = document.getElementById("submit-btn");
+                const bark_api_url = document
+                    .getElementById("bark-api-url")
+                    .value.trim();
                 const data = {
                     bark_id: document.getElementById("bark-id").value.trim(),
                     latitude: parseFloat(latInput.value),
@@ -721,6 +737,7 @@
                     min_intensity: parseInt(
                         document.getElementById("min-intensity").value,
                     ),
+                    bark_api_url: bark_api_url || "https://api.day.app",
                 };
 
                 btn.disabled = true;
@@ -740,6 +757,10 @@
                     if (res.ok && result.success) {
                         showStatus("订阅成功！地震预警已生效。", "success");
                         localStorage.setItem("bark_id", data.bark_id);
+                        localStorage.setItem(
+                            "bark_api_url",
+                            data.bark_api_url,
+                        );
                         localStorage.setItem(
                             "last_pos",
                             JSON.stringify({
@@ -818,6 +839,9 @@
                 fetchStats();
                 const savedId = localStorage.getItem("bark_id");
                 if (savedId) document.getElementById("bark-id").value = savedId;
+                const savedApiUrl = localStorage.getItem("bark_api_url");
+                if (savedApiUrl)
+                    document.getElementById("bark-api-url").value = savedApiUrl;
 
                 const savedPos = JSON.parse(localStorage.getItem("last_pos"));
                 if (savedPos) setPosition(savedPos.lat, savedPos.lon);

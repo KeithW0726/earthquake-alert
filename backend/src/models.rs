@@ -8,11 +8,19 @@ pub struct Subscription {
     pub latitude: f64,
     pub longitude: f64,
     pub min_intensity: u8, // 最小烈度阈值 (0-7)
+    #[serde(default = "default_bark_api_url")]
+    pub bark_api_url: String,
     pub created_at: i64,
 }
 
 impl Subscription {
-    pub fn new(bark_id: String, latitude: f64, longitude: f64, min_intensity: u8) -> Self {
+    pub fn new(
+        bark_id: String,
+        latitude: f64,
+        longitude: f64,
+        min_intensity: u8,
+        bark_api_url: String,
+    ) -> Self {
         let created_at = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -23,6 +31,7 @@ impl Subscription {
             latitude,
             longitude,
             min_intensity,
+            bark_api_url,
             created_at,
         }
     }
@@ -36,10 +45,16 @@ pub struct SubscribeRequest {
     pub longitude: f64,
     #[serde(default = "default_min_intensity")]
     pub min_intensity: u8, // 最小烈度阈值，默认 3
+    #[serde(default = "default_bark_api_url")]
+    pub bark_api_url: String,
 }
 
 fn default_min_intensity() -> u8 {
     3 // 默认震度 3 以上推送
+}
+
+fn default_bark_api_url() -> String {
+    "https://api.day.app".to_string()
 }
 
 /// API 响应

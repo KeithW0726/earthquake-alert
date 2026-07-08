@@ -69,6 +69,7 @@ pub async fn subscribe_handler(
         payload.latitude,
         payload.longitude,
         payload.min_intensity,
+        payload.bark_api_url.clone(),
     );
 
     // 打印订阅信息
@@ -176,6 +177,7 @@ pub struct SubscribeResponse {
     pub latitude: f64,
     pub longitude: f64,
     pub min_intensity: u8,
+    pub bark_api_url: String,
     pub created_at: i64,
 }
 
@@ -186,6 +188,7 @@ impl From<Subscription> for SubscribeResponse {
             latitude: sub.latitude,
             longitude: sub.longitude,
             min_intensity: sub.min_intensity,
+            bark_api_url: sub.bark_api_url,
             created_at: sub.created_at,
         }
     }

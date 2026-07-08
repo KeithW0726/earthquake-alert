@@ -67,13 +67,14 @@ impl BarkNotifier {
             region_text, earthquake.depth, earthquake.max_intensity,
         );
 
-        self.send_notification(&subscription.bark_id, &title, &subtitle, &body)
+        self.send_notification(&subscription.bark_api_url, &subscription.bark_id, &title, &subtitle, &body)
             .await
     }
 
     /// 发送 Bark 通知（支持重试）
     async fn send_notification(
         &self,
+        api_url: &str,
         bark_id: &str,
         title: &str,
         subtitle: &str,
@@ -84,10 +85,17 @@ impl BarkNotifier {
         let subtitle_encoded = urlencoding::encode(subtitle);
         let body_encoded = urlencoding::encode(body);
 
+        // 使用订阅者的自定义服务器地址，空值时降级到全局配置
+        let base_url = if api_url.is_empty() {
+            &self.api_url
+        } else {
+            api_url
+        };
+
         // Bark 推送格式: /:key/:title/:subtitle/:body?params
         let url = format!(
             "{}/{}/{}/{}/{}?group=地震预警&level=critical&volume=10",
-            self.api_url,
+            base_url.trim_end_matches('/'),
             urlencoding::encode(bark_id),
             title_encoded,
             subtitle_encoded,
